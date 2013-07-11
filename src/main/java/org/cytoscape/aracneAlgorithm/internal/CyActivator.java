@@ -2,7 +2,7 @@ package org.cytoscape.aracneAlgorithm.internal;
 
 import org.cytoscape.application.swing.CySwingApplication;
 
-
+import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
 
 import org.cytoscape.application.swing.CyAction;
 import org.cytoscape.cyni.*;
@@ -27,7 +27,10 @@ public class CyActivator extends AbstractCyActivator {
 		//Register new Cyni Algorithm
 		registerService(bc,test,CyCyniAlgorithm.class, new Properties());
 
-		
+		//Define new Cyni Metric
+		MutualInfoMetric miMetric = new MutualInfoMetric();
+		//Register new Cyni Algorithm
+		registerService(bc,miMetric,CyCyniMetric.class, new Properties());
 
 	}
 }

@@ -29,6 +29,8 @@
 						<Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Export-Package>!${bundle.namespace}.*</Export-Package>
+						<Embed-Dependency>commons-math3;colt;inline=true</Embed-Dependency>
+					<!--	<Import-Package>!EDU.oswego.cs.dl.util.concurrent</Import-Package>-->
 						<Private-Package>${bundle.namespace}.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.CyActivator</Bundle-Activator>
 					</instructions>
@@ -39,6 +41,17 @@
 
 	<!-- Links to the Cytoscape Maven repositories. -->
 	<repositories>
+		<repository>
+			<id>apache</id>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<name>Apache Releases</name>
+			<url>http://code.cytoscape.org/nexus/content/repositories/public/</url>
+		</repository>
 		<repository>
 			<id>cytoscape_snapshots</id>
 			<snapshots>
@@ -72,6 +85,7 @@
 			<name>Cytoscape Apps API Releases</name>
 			<url>http://code.cytoscape.org/nexus/content/repositories/apps/</url>
 		</repository>
+		
 	</repositories>
 
 	<dependencies>
@@ -105,7 +119,16 @@
 			<artifactId>cyni-api</artifactId>
 			<version>${cyni.api.version}</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.0</version>
+		</dependency>
+                <dependency>
+			<groupId>cytoscape-temp</groupId>
+			<artifactId>colt</artifactId>
+			<version>1.0.3</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

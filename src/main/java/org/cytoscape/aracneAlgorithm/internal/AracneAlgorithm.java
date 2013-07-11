@@ -59,7 +59,7 @@ public class AracneAlgorithm extends AbstractCyniAlgorithm {
 	 * Creates a new EqualDiscretization object.
 	 */
 	public AracneAlgorithm() {
-		super("aracne.cyni","aRACNE Algorithm",true,CyniCategory.INDUCTION);
+		super("aracne.cyni","ARACNE Algorithm",true,CyniCategory.INDUCTION);
 	
 	}
 
@@ -74,7 +74,7 @@ public class AracneAlgorithm extends AbstractCyniAlgorithm {
 	public CyniAlgorithmContext createCyniContext(CyTable table, CyCyniMetricsManager metricsManager, TunableSetter tunableSetter,Map<String, Object> mparams) {
 		CyniAlgorithmContext context;
 		selectedTable = table;
-		context = new AracneAlgorithmContext();
+		context = new AracneAlgorithmContext(selectedTable);
 		if(mparams != null && !mparams.isEmpty())
 			tunableSetter.applyTunables(context, mparams);
 		return context;
