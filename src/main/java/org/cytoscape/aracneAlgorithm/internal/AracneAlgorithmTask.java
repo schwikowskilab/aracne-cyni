@@ -313,6 +313,9 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	        // sorting class will sort by the double fields.
 	        for (int i = 0; i < nRows; i++) {
 	        	miVector.clear();
+	        	if (cancelled)
+					break;
+	        	 
 	        	for (int j = 0; j < nRows; j++) 
 				{
 	        		if(edgePresence[i][j])

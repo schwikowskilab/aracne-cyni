@@ -44,7 +44,7 @@ public class AracneCyniTable extends CyniTable {
             double std_dev = Math.sqrt(variance[i]);
             data.clear();
             for (int j = 0; j < n; j++) {
-                data.add((double) doubleValue(j, i));
+                data.add((double) doubleValue(i, j));
             }
 
             Collections.sort(data);
@@ -77,7 +77,7 @@ public class AracneCyniTable extends CyniTable {
 
             Vector<Gene> data = new Vector<Gene>(n);
             for (int j = 0; j < n; j++) {
-                Gene g = new Gene(j,  doubleValue(j, i));
+                Gene g = new Gene(j,  doubleValue(i, j));
                 data.add(g);
             }
             Collections.sort(data, new Sort_Gene());
@@ -122,7 +122,7 @@ public class AracneCyniTable extends CyniTable {
         double s = 0;
         double ss = 0;
         for (int i = 0; i < n; i++) {
-            double v = doubleValue(i, m);
+            double v = doubleValue(m, i);
             s += v;
             ss += v * v;
         }
