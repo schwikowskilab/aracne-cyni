@@ -81,6 +81,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	private CyCyniMetric selectedMetric;
 	private final List<String> attributeArray;
 	private CyLayoutAlgorithmManager layoutManager;
+	private CyRootNetworkManager rootMgr;
 	private CyniNetworkUtils netUtils;
 	private boolean edgePresence[][];
 	private double MIScore[][];
@@ -110,6 +111,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		super(name, context,networkFactory,networkViewFactory,networkManager, networkViewManager,netTableMgr,rootNetMgr, vmMgr);
 		
 		this.mytable = selectedTable;
+		this.rootMgr = rootNetMgr;
 		this.layoutManager = layoutManager;
 		this.netUtils = new CyniNetworkUtils(networkViewFactory,networkManager,networkViewManager,netTableMgr,rootNetMgr,vmMgr);
 		this.attributeArray = context.attributeList.getSelectedValues();
@@ -148,7 +150,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		double chosenTh;
 		CyLayoutAlgorithm layout;
 		CyNetworkView newNetworkView ;
-		CyTable nodeTable, edgeTable;
+		CyTable nodeTable, edgeTable, netTable;
 		Double step;
 		CyEdge edge;
 		ArrayList<Integer> index = new ArrayList<Integer>(1);
@@ -158,6 +160,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		CyNode mapRowNodes[];
 		int threadIndex[] = new int[nThreads];
 		threadNumber=0;
+		List<CyEdge> edgeList;
 		Arrays.fill(threadResults, 0.0);
 		
 		index.add(1);
@@ -190,10 +193,13 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		nodeTable = newNetwork.getDefaultNodeTable();
 		edgeTable = newNetwork.getDefaultEdgeTable();
+		netTable = newNetwork.getDefaultNetworkTable();
 		netUtils.addColumns(networkSelected,newNetwork,mytable,CyNode.class, CyNetwork.LOCAL_ATTRS);
 	
 		edgeTable.createColumn("Metric", String.class, false);
 		edgeTable.createColumn("Mutual Information", Double.class, false);	
+		netTable.createColumn("Mutual Information Algorithm", String.class, false);
+		netTable.getRow(newNetwork.getSUID()).set("Mutual Information Algorithm", algorithm.toString());
 		
 		nRows = data.nRows();
 		step = 1.0 / nRows;
@@ -353,7 +359,10 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	                    if (valueBC > minMI && edgePresence[geneId1][geneId2]) {
 	                    	if(newNetwork.containsEdge(mapRowNodes[i], mapRowNodes[geneId1]))
 	                    	{
-	                    		newNetwork.removeEdges(newNetwork.getConnectingEdgeList(mapRowNodes[i], mapRowNodes[geneId1], CyEdge.Type.UNDIRECTED));
+	                    		edgeList = newNetwork.getConnectingEdgeList(mapRowNodes[i], mapRowNodes[geneId1], CyEdge.Type.UNDIRECTED);
+	                    		rootMgr.getRootNetwork(newNetwork).removeEdges(edgeList);
+	                    		//newNetwork.getDefaultEdgeTable().deleteRows(Collections.singletonList(edgeList.get(0).getSUID()));
+	                    		//newNetwork.removeEdges(edgeList);
 	                    		//System.out.println("removed " + i + " " + geneId1);
 	                    	}
 	                        break;

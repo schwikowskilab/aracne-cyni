@@ -3,7 +3,7 @@ package org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric;
 
 public  class Gene {
         public double x;
-        int xi; // index of x
+        public int xi; // index of x
         public int maId;
         
         public Gene(int mId, double value) {

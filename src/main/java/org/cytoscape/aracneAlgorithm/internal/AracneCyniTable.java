@@ -28,7 +28,9 @@ public class AracneCyniTable extends CyniTable {
 	{
 		super(table);
 		rankedValues = new Vector<Vector<Gene>>(this.nRows());
+		computeMarkerVariance();
 		computeBandwidth();
+		computeMarkerRanks();
 	}
 	
 	public void computeBandwidth( ) {
@@ -81,7 +83,9 @@ public class AracneCyniTable extends CyniTable {
                 data.add(g);
             }
             Collections.sort(data, new Sort_Gene());
-           
+            
+            for (int j = 0; j < n; j++)
+                data.get(j).xi = j;
             rankedValues.add(i, data) ;
         }
     }
