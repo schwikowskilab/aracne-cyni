@@ -259,12 +259,18 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 						{
 							edgePresence[i][j]= true;
 							edgePresence[j][i]= true;
+							MIScore[j][i] = MIScore[i][j];
 							if(mapRowNodes[i] == null)
 							{
 								node1 = newNetwork.addNode();
 								netUtils.cloneRow(newNetwork,CyNode.class,mytable.getRow(data.getRowLabel(i)), newNetwork.getRow(node1));
 								if(newNetwork.getRow(node1).get(CyNetwork.NAME,String.class ) == null || newNetwork.getRow(node1).get(CyNetwork.NAME,String.class ).isEmpty() == true)
-									newNetwork.getRow(node1).set(CyNetwork.NAME, "Node " + numNodes);
+								{
+									if(mytable.getPrimaryKey().getType().equals(String.class) && networkSelected == null)
+										newNetwork.getRow(node1).set(CyNetwork.NAME,mytable.getRow(data.getRowLabel(i)).get(mytable.getPrimaryKey().getName(),String.class));
+									else
+										newNetwork.getRow(node1).set(CyNetwork.NAME, "Node " + numNodes);
+								}
 								if(newNetwork.getRow(node1).get(CyNetwork.SELECTED,Boolean.class ) == true)
 									newNetwork.getRow(node1).set(CyNetwork.SELECTED, false);
 								mapRowNodes[i] =node1;
@@ -275,7 +281,12 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 								node2 = newNetwork.addNode();
 								netUtils.cloneRow(newNetwork,CyNode.class,mytable.getRow(data.getRowLabel(j)), newNetwork.getRow(node2));
 								if(newNetwork.getRow(node2).get(CyNetwork.NAME,String.class ) == null || newNetwork.getRow(node2).get(CyNetwork.NAME,String.class ).isEmpty() == true)
-									newNetwork.getRow(node2).set(CyNetwork.NAME, "Node " + numNodes);
+								{
+									if(mytable.getPrimaryKey().getType().equals(String.class) && networkSelected == null)
+										newNetwork.getRow(node2).set(CyNetwork.NAME,mytable.getRow(data.getRowLabel(j)).get(mytable.getPrimaryKey().getName(),String.class));
+									else
+										newNetwork.getRow(node2).set(CyNetwork.NAME, "Node " + numNodes);
+								}
 								if(newNetwork.getRow(node2).get(CyNetwork.SELECTED,Boolean.class ) == true)
 									newNetwork.getRow(node2).set(CyNetwork.SELECTED, false);
 								mapRowNodes[j] = node2;
@@ -373,28 +384,6 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	        }
 
 		}
-		/*for (int i = 0; i < nRows; i++) 
-		{
-			if (cancelled)
-				break;
-			
-			for (int j = i+1; j < nRows; j++) 
-			{
-				if(!edgePresence[i][j])
-					continue;
-				if (cancelled)
-					break;
-				for (int k = j+1; k < nRows; k++) 
-				{
-					if(!edgePresence[j][k] || !edgePresence[i][k])
-						continue;
-					
-					applyDPI(i,j,k);
-					
-				}
-				
-			}
-		}*/
 		
 		
 		//Display the new network
