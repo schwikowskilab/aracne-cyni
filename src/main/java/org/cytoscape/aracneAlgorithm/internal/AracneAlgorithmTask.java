@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
@@ -179,6 +180,20 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		// Create the CyniTable
 		AracneCyniTable data = new AracneCyniTable(mytable,attributeArray.toArray(new String[0]), false, false, selectedOnly);
+		
+		if(data.hasAnyMissingValue())
+		{
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					JOptionPane.showMessageDialog(null, "The data selected contains missing values.\n " +
+							"Therefore, this algorithm can not proceed with these conditions.\n" +
+							"Please, use one of the imputation data algorithms to estimate the missing values.", "Warning", JOptionPane.WARNING_MESSAGE);
+				}
+			});
+			newNetwork.dispose();
+			return;
+		}
 		
 		data.computeMarkerVariance();
         data.computeBandwidth();
