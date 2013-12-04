@@ -1,6 +1,6 @@
 package org.cytoscape.aracneAlgorithm.internal;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 
 import org.cytoscape.cyni.CyniAlgorithmContext;
@@ -14,20 +14,30 @@ import org.cytoscape.work.TunableValidator;
 public class AracneAlgorithmContext extends CyniAlgorithmContext implements TunableValidator {
 	
 	
-	@Tunable(description="Manual Kernel Width Definition")
+	@Tunable(description="Mutual Information Algorithm Type:",groups="Algorithm Definition")
+	public ListSingleSelection<String> algoChooser = new ListSingleSelection<String>("Naive Bayes","Adaptive Partitioning","Fixed Bandwith","Variable Bandwith");
+	
+	
+	@Tunable(description="Manual Kernel Width Definition",dependsOn="algoChooser=Fixed Bandwith",groups="Algorithm Definition")
 	public boolean manualKernel = false;
 	
-	@Tunable(description="Kernel Width(0,1): ",dependsOn="manualKernel=true")
+	@Tunable(description="Kernel Width(0,1): ",dependsOn="manualKernel=true",groups="Algorithm Definition")
 	public double kernelWidth = 0.0;
 	
-	@Tunable(description="DPI Tolerance[0,1]: ")
+	@Tunable(description="DPI Tolerance[0,1]: ",groups="Algorithm Definition")
 	public double dpiTol = 0.0;
 	
-	@Tunable(description="Mutual Information Steps: ")
+	@Tunable(description="Mutual Information Steps: ",groups="Algorithm Definition")
 	public int miSteps = 6;
 	
-	@Tunable(description="Mutual Information Algorithm Type:")
-	public ListSingleSelection<String> algoChooser = new ListSingleSelection<String>("Naive Bayes","Adaptive Partitioning","Fixed Bandwith","Variable Bandwith");
+	@Tunable(description="Hub Genes File ",groups="Hub/Transcription Factor Definition",params="input=true")
+	public File hubFile ;
+	
+	@Tunable(description="Transcription Factor List: ",groups="Hub/Transcription Factor Definition",params="input=true")
+	public File TFFile ;
+	
+	@Tunable(description="Gene/TF column name mapping:",groups="Hub/Transcription Factor Definition")
+	public ListSingleSelection<String> colMapping ;
 	
 	@Tunable(description="Which threshold to use:",groups="Threshold Definition", xorChildren=true)
 	public ListSingleSelection<String> thresholdChooser = new ListSingleSelection<String>("MI Threshold","P-Value Threshold");
@@ -57,6 +67,9 @@ public class AracneAlgorithmContext extends CyniAlgorithmContext implements Tuna
 			attributeList = new  ListMultipleSelection<String>("No sources available");
 		}
 		algoChooser.setSelectedValue("Naive Bayes");
+		colMapping =  new  ListSingleSelection<String>(getAllAttributesStrings(table));
+		if(table.getPrimaryKey().getType() == String.class)
+			colMapping.setSelectedValue(table.getPrimaryKey().getName());
 	}
 	
 	@Override

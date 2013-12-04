@@ -42,6 +42,7 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.io.*;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -92,6 +93,9 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	private boolean manualKernel;
 	private Mutual_Info.ALGORITHM algorithm;
 	private boolean usePValue;
+	private File fileHub;
+	private File fileTFList;
+	private String mapCol;
 	private double pvalue;
 	private double miTh;
 	public static double KERNEL_ALPHA = 0.52477;
@@ -135,6 +139,15 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			this.usePValue = true;
 		else
 			this.usePValue = false;
+		
+		fileHub = null;
+		fileTFList = null;
+		mapCol = context.colMapping.getSelectedValue();
+		
+		if(context.hubFile != null && context.hubFile.exists())
+			fileHub = context.hubFile;
+		if(context.TFFile != null && context.TFFile.exists())
+			fileTFList = context.TFFile;
 	}
 
 	/**
@@ -162,9 +175,15 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		int threadIndex[] = new int[nThreads];
 		threadNumber=0;
 		List<CyEdge> edgeList;
+		ArrayList<Integer> ids;
+		Map<Integer, Integer> transfac = new HashMap<Integer, Integer>();
+		ArrayList<String> geneNames;
 		Arrays.fill(threadResults, 0.0);
 		
 		index.add(1);
+		
+		ids = new ArrayList<Integer>();
+		geneNames = new ArrayList<String>();
 		
         //step = 1.0 /  attributeArray.size();
         
@@ -193,6 +212,60 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			});
 			newNetwork.dispose();
 			return;
+		}
+		
+		if(fileHub != null)
+		{
+			CyRow selectedRow = null;
+			int id;
+			if(readProbeList(fileHub.toString(),geneNames) != -1)
+			{
+				for(int i=0;i<geneNames.size();i++)
+				{
+					for(CyRow row : mytable.getAllRows())
+					{
+						if(row.get(mapCol, String.class).matches(geneNames.get(i)))
+						{
+							selectedRow = row;
+							break;
+						}
+					}
+					if(selectedRow != null)
+					{
+						id = data.getRowIndex(selectedRow.getRaw(mytable.getPrimaryKey().getName()));
+						selectedRow = null;
+						if(id != -1)
+							ids.add(id);
+					}
+				}
+			}
+		}
+		
+		if(fileTFList != null)
+		{
+			CyRow selectedRow = null;
+			int id;
+			if(readProbeList(fileTFList.toString(),geneNames) != -1)
+			{
+				for(int i=0;i<geneNames.size();i++)
+				{
+					for(CyRow row : mytable.getAllRows())
+					{
+						if(row.get(mapCol, String.class).matches(geneNames.get(i)))
+						{
+							selectedRow = row;
+							break;
+						}
+					}
+					if(selectedRow != null)
+					{
+						id = data.getRowIndex(selectedRow.getRaw(mytable.getPrimaryKey().getName()));
+						selectedRow = null;
+						if(id != -1)
+							transfac.put(id, 1);
+					}
+				}
+			}
 		}
 		
 		data.computeMarkerVariance();
@@ -251,9 +324,14 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 					threadNumber = 0;
 					if (cancelled)
 						break;
+					
+					if(ids.size() > 0 && !ids.contains(i))
+						continue;
 
 					for (int j = i+1; j < nRows; j++) 
 					{
+						if(ids.size() > 0 && !ids.contains(j))
+							continue;
 						if (cancelled)
 							break;
 						
@@ -270,6 +348,10 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 					
 					for (int j = i+1; j < nRows; j++) 
 					{
+						if(ids.size() > 0 && !ids.contains(j))
+							continue;
+						if (cancelled)
+							break;
 						if(MIScore[i][j]> chosenTh)
 						{
 							edgePresence[i][j]= true;
@@ -312,6 +394,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 							{
 								edge = newNetwork.addEdge(mapRowNodes[i], mapRowNodes[j], false);
 								newNetwork.getRow(edge).set("Mutual Information", MIScore[i][j]);
+								newNetwork.getRow(edge).set(CyEdge.INTERACTION,((Double)MIScore[i][j]).toString());
 								newNetwork.getRow(edge).set("Metric",selectedMetric.toString());
 								newNetwork.getRow(edge).set("name", newNetwork.getRow(mapRowNodes[i]).get("name", String.class)
 										+ " (Aracne) " + newNetwork.getRow( mapRowNodes[j]).get("name", String.class));
@@ -323,8 +406,6 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 							edgePresence[j][i]= false;
 							
 						}
-							
-						
 					}
 					progress = progress + step;
 					taskMonitor.setProgress(progress);
@@ -347,6 +428,8 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	        	miVector.clear();
 	        	if (cancelled)
 					break;
+	        	if(ids.size() > 0 && !ids.contains(i))
+					continue;
 	        	 
 	        	for (int j = 0; j < nRows; j++) 
 				{
@@ -360,6 +443,8 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	            // for each value in the vector (these are genes directly connected to row_idx.
 	            // i.e. geneId1 is connected to i)
 	            for (int j = 0; j < miVector.size(); j++) {
+	            	if(ids.size() > 0 && !ids.contains(j))
+						continue;
 	                // (geneId1, valueAB) are the (id, value) of the selected gene, starting with the largest mi
 	                int geneId1 = miVector.get(j).getId();
 	                double valueAB = miVector.get(j).getValue();
@@ -383,6 +468,14 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	                    // geneId1 is connected to gene i via geneId2
 	                    double valueBC = MIScore[ geneId1][ geneId2];
 	                    if (valueBC > minMI && edgePresence[geneId1][geneId2]) {
+	                    	// if TF annotation information is provided, the triangle will be
+	                        // broken only if certein logic is met
+	                        if (!(transfac.isEmpty())) {
+	                            if (protectedByTFLogic(transfac, i, geneId1, geneId2)) {
+	                                continue;
+	                            }
+	                        }
+
 	                    	if(newNetwork.containsEdge(mapRowNodes[i], mapRowNodes[geneId1]))
 	                    	{
 	                    		edgeList = newNetwork.getConnectingEdgeList(mapRowNodes[i], mapRowNodes[geneId1], CyEdge.Type.UNDIRECTED);
@@ -418,11 +511,38 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
        
         return (THRESHOLD_ALPHA - Math.log(pvalue)) / ((-THRESHOLD_BETA) + (-THRESHOLD_GAMMA) * n);
     }
+	
+	static int readProbeList(String infile, List<String> probeList) {
+        int count = 0;
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(infile));
 
-	private void applyDPI(int index1, int index2, int index3)
-	{
-		
-	}
+            String line = reader.readLine();
+            while (line != null) {
+                probeList.add(line);
+                count++;
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Problem reading probe list file " + infile);
+            e.printStackTrace();
+            return -1;
+        }
+        return count;
+    }
+	
+	boolean protectedByTFLogic(Map<Integer, Integer> transfac, int geneId1, int geneId2, int geneId3) {
+        boolean isA = (transfac.get(geneId1) != null);
+        boolean isB = (transfac.get(geneId2) != null);
+        boolean isC = (transfac.get(geneId3) != null);
+        
+        if ( isC ) {
+            return false;
+        } else if (!(isA || isB)) {
+            return false;
+        }
+        return true;
+    }
 	
 	private class ThreadedGetMetric implements Runnable {
 		private ArrayList<Integer> index2;

@@ -30,6 +30,7 @@
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Export-Package>!${bundle.namespace}.*</Export-Package>
 						<Embed-Dependency>commons-math3;colt;inline=true</Embed-Dependency>
+						<Cytoscape-App-Dependencies>Cyni Toolbox;1.0.0.beta5</Cytoscape-App-Dependencies>
 					<!--	<Import-Package>!EDU.oswego.cs.dl.util.concurrent</Import-Package>-->
 						<Private-Package>${bundle.namespace}.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.CyActivator</Bundle-Activator>
