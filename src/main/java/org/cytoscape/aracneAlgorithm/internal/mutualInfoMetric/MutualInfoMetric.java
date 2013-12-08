@@ -55,18 +55,7 @@ public class MutualInfoMetric extends AbstractCyniMetric {
     private Mutual_Info.ALGORITHM type;
     private Mutual_Info mi;
     static private final int miBlocks = 2;
-
-	
-    private int[][] miSpace = null;
-    private RankSorter[] ranks = null;
-    private double[][] miProb = null;
-    private double maPerMIStep = 1;
-    private double bandwith[];
-	private Vector<Vector<Gene>> rankedValues;
-	private double variance[];
-
     
-
 	
 	public Double getMetric(CyniTable table1, CyniTable table2, int indexBase, List<Integer> indexToCompare) { 
 		double result = 0.0;

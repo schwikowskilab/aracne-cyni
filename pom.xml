@@ -29,7 +29,7 @@
 						<Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Export-Package>!${bundle.namespace}.*</Export-Package>
-						<Embed-Dependency>commons-math3;colt;inline=true</Embed-Dependency>
+						<Embed-Dependency>commons-discovery;commons-math3;commons-math;colt;inline=true</Embed-Dependency>
 						<Cytoscape-App-Dependencies>Cyni Toolbox;1.0.0.beta5</Cytoscape-App-Dependencies>
 					<!--	<Import-Package>!EDU.oswego.cs.dl.util.concurrent</Import-Package>-->
 						<Private-Package>${bundle.namespace}.*</Private-Package>
@@ -125,6 +125,16 @@
 			<artifactId>commons-math3</artifactId>
 			<version>3.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math</artifactId>
+			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-discovery</artifactId>
+			<version>0.5</version>
+		</dependency>
                 <dependency>
 			<groupId>cytoscape-temp</groupId>
 			<artifactId>colt</artifactId>
@@ -154,6 +164,11 @@
 			<version>${cytoscape.api.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>cytoscape-temp</groupId>
+			<artifactId>parallelcolt</artifactId>
+			<version>0.9.4</version>
 		</dependency>
 	</dependencies>
 

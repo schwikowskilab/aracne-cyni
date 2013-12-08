@@ -13,6 +13,8 @@ import org.cytoscape.work.TunableValidator;
 
 public class AracneAlgorithmContext extends CyniAlgorithmContext implements TunableValidator {
 	
+	@Tunable(description="Aracne Mode:",groups="Algorithm Definition")
+	public ListSingleSelection<String> mode = new ListSingleSelection<String>(MODE_DISCOVERY,MODE_PREPROCESSING,MODE_COMPLETE);
 	
 	@Tunable(description="Mutual Information Algorithm Type:",groups="Algorithm Definition")
 	public ListSingleSelection<String> algoChooser = new ListSingleSelection<String>("Naive Bayes","Adaptive Partitioning","Fixed Bandwith","Variable Bandwith");
@@ -48,11 +50,14 @@ public class AracneAlgorithmContext extends CyniAlgorithmContext implements Tuna
 	@Tunable(description="P-Value Threshold(0,1]:",groups={"Threshold Definition","P-Value Threshold Definition"},xorKey="P-Value Threshold")
 	public double pvalue = 0.5;
 	
-	@Tunable(description="Data Attributes", groups="Sources for Network Inference")
+	@Tunable(description="Data Attributes", groups="Sources for Network Inference",params="displayState=collapsed")
 	public ListMultipleSelection<String> attributeList;
 
 	
 	private List<String> attributes;
+	public static String MODE_DISCOVERY = "Discovery";
+	public static String MODE_PREPROCESSING = "Pre-Processing";
+	public static String MODE_COMPLETE = "Complete";
 	
 
 	public AracneAlgorithmContext(CyTable table ) {
@@ -61,6 +66,7 @@ public class AracneAlgorithmContext extends CyniAlgorithmContext implements Tuna
 		if(attributes.size() > 0)
 		{
 			attributeList = new  ListMultipleSelection<String>(attributes);
+			attributeList.setSelectedValues(attributeList.getPossibleValues());
 		}
 		else
 		{
@@ -68,6 +74,7 @@ public class AracneAlgorithmContext extends CyniAlgorithmContext implements Tuna
 		}
 		algoChooser.setSelectedValue("Naive Bayes");
 		colMapping =  new  ListSingleSelection<String>(getAllAttributesStrings(table));
+		mode.setSelectedValue(MODE_DISCOVERY);
 		if(table.getPrimaryKey().getType() == String.class)
 			colMapping.setSelectedValue(table.getPrimaryKey().getName());
 	}

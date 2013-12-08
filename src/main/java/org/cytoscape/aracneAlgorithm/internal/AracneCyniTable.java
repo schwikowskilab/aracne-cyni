@@ -71,6 +71,10 @@ public class AracneCyniTable extends CyniTable {
 		return bandwith[idx];
 	}
 	
+	public double getVariance(int idx)
+	{
+		return variance[idx];
+	}
 	
 	public void computeMarkerRanks() {
 		int n = this.nColumns();
@@ -102,6 +106,18 @@ public class AracneCyniTable extends CyniTable {
              variance[i] = calVariance(i);
             
         }
+    }
+    
+    public void setVariance(double variance,int idx) {
+        this.variance[idx] = variance;
+    }
+
+    public void setBandwidth(double bandwidth,int idx) {
+        this.bandwith[idx] = bandwidth;
+    }
+    
+    public void setRankedValues(Vector<Gene> r,int idx) {
+        rankedValues.set(idx, r);
     }
     
     public class Sort_Gene implements Comparator<Gene> {
