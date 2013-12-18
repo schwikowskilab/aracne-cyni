@@ -64,14 +64,8 @@ import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.subnetwork.CyRootNetworkManager;
 import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.property.CyProperty;
 import java.util.Comparator;
-
-import cern.colt.matrix.tbit.*;
-
-import org.apache.commons.math3.distribution.*;
-
-
-
 
 
 /**
@@ -85,9 +79,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	private CyLayoutAlgorithmManager layoutManager;
 	private CyRootNetworkManager rootMgr;
 	private CyniNetworkUtils netUtils;
-	//private boolean edgePresence[][];
 	private MatrixEdgePair matrix;
-	//private double MIScore[][];
 	private int miSteps;
 	private double bandwith;
 	private double dpiTol;
@@ -106,8 +98,16 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
     public static double THRESHOLD_ALPHA = 1.062;
     public static double THRESHOLD_BETA = -48.7;
     public static double THRESHOLD_GAMMA = -0.634;
-    public static String kernel_file = "config_kernel.txt";
-    public static String threshold_file = "config_threshold.txt";
+    /** Default configuration directory used for all Cytoscape configuration files */
+	public static final String DEFAULT_CONFIG_DIR = CyProperty.DEFAULT_PROPS_CONFIG_DIR ;
+	
+	private static final String DEF_USER_DIR = System.getProperty("user.home");
+	
+	private String kernel_file = join(File.separator, DEF_USER_DIR, DEFAULT_CONFIG_DIR, "3", "aracne", "config_kernel.txt");
+	
+	private String threshold_file = join(File.separator, DEF_USER_DIR, DEFAULT_CONFIG_DIR, "3", "aracne","config_threshold.txt");
+	private String aracne_path = join(File.separator, DEF_USER_DIR, DEFAULT_CONFIG_DIR, "3", "aracne");
+
 	
 
 	/**
@@ -174,18 +174,12 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		Double step;
 		CyEdge edge;
 		ArrayList<Integer> index = new ArrayList<Integer>(1);
-		int nRows,threadNumber;
-		double threadResults[] = new double[nThreads];
-		double result;
+		int nRows;
 		CyNode mapRowNodes[];
-		int threadIndex[] = new int[nThreads];
-		threadNumber=0;
-		List<CyEdge> edgeList;
 		boolean ids[];
 		Thresholds thParams = null;
 		Map<Integer, Integer> transfac = new HashMap<Integer, Integer>();
 		ArrayList<String> geneNames;
-		Arrays.fill(threadResults, 0.0);
 		
 		index.add(1);
 		
@@ -287,6 +281,9 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
         data.computeBandwidth();
         data.computeMarkerRanks();
         
+        if(algorithm.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || algorithm.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
+        	data.addNoise();
+        
 		
 		//Set the name of the network, another name could be chosen
 		networkName = "ARACNE Inference " + newNetwork.getSUID();
@@ -310,8 +307,6 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		mapRowNodes = new CyNode[nRows];
 		Arrays.fill(mapRowNodes, null);
-		threadResults = new double[nRows];
-		threadIndex = new int[nRows];
 		
 		taskMonitor.setStatusMessage("ARACNE Algorithm running: Statistics calculated ...");	
 		
@@ -330,9 +325,12 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
             data2.computeBandwidth();
             data2.computeMarkerRanks();
             
-            thParams = new Thresholds (data2,selectedMetric );
-            progress = progress + 3*step;
-            taskMonitor.setProgress(progress);
+            if(algorithm.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || algorithm.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
+            	data2.addNoise();
+            
+            thParams = new Thresholds (data2,selectedMetric,threshold_file,kernel_file,aracne_path );
+            progress = 0.1;
+            taskMonitor.setProgress(0.1);
         }
 	
 		
@@ -342,6 +340,8 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
             params.put("KernelWidth", bandwith);
 			selectedMetric.setParameters(params);
             thParams.generateMutualInformationThresholdConfiguration(algorithm);
+            newNetwork.dispose();
+            return;
         } else if (mode.matches(AracneAlgorithmContext.MODE_COMPLETE)) {
         	thParams.generateKernelWidthConfiguration(algorithm);
         	thParams.generateMutualInformationThresholdConfiguration(algorithm);
@@ -396,7 +396,6 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 					
 					progress = progress + step;
 					taskMonitor.setProgress(progress);
-					System.out.println("Done with gene " + i);
 					executor = Executors.newFixedThreadPool(nThreads);
 		}
 		
@@ -503,7 +502,6 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 					if (cancelled)
 						break;
 							
-					//if(edgePresence[i][j])
 					if(matrix.getPresence(i, j))
 					{
 						if(mapRowNodes[i] == null)
@@ -642,6 +640,20 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
         }
         return true;
     }
+	
+	private static String join(String separator, String... parts) {
+		StringBuilder builder = new StringBuilder();
+		boolean isFirst = true;
+		for (String part : parts) {
+			if (!isFirst) {
+				builder.append(separator);
+			} else {
+				isFirst = false;
+			}
+			builder.append(part);
+		}
+		return builder.toString();
+	}
 	
 	private class ThreadedGetMetric implements Runnable {
 		private ArrayList<Integer> index2;

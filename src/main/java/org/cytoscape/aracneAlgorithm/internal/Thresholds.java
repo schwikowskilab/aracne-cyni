@@ -39,11 +39,20 @@ public class Thresholds {
     
     private AracneCyniTable cyniTable;
     private CyCyniMetric selectedMetric;
+    private String threshold_file;
+    private String bandwith_file;
     
-    public Thresholds(AracneCyniTable table,CyCyniMetric selectedMetric)
+    
+    public Thresholds(AracneCyniTable table,CyCyniMetric selectedMetric,String threshold_file,String bandwith_file, String path)
     {
     	cyniTable = table;
     	this.selectedMetric = selectedMetric;
+    	this.bandwith_file = bandwith_file;
+    	this.threshold_file = threshold_file;
+    	//System.out.println("path: " +path);
+    	File test = new File(path);
+    	if(!test.exists())
+    		test.mkdirs();
     }
 
     public void generateMutualInformationThresholdConfiguration(Mutual_Info.ALGORITHM algorithm) {
@@ -115,7 +124,7 @@ public class Thresholds {
         //System.out.println("slope " + slope);
 
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(AracneAlgorithmTask.threshold_file));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(threshold_file));
             bw.write(">" + "ConfigData");
             bw.newLine();
             bw.write(meanAlpha + "\t" + intercept + "\t" + slope);
@@ -395,7 +404,7 @@ public class Thresholds {
             a = Math.exp(regression.getIntercept());
             b = regression.getSlope();
             try {
-                BufferedWriter bw = new BufferedWriter(new FileWriter(AracneAlgorithmTask.kernel_file));
+                BufferedWriter bw = new BufferedWriter(new FileWriter(bandwith_file));
                 bw.write(">" + "ConfigData");
                 bw.newLine();
                 bw.write(a + "\t" + b);
@@ -478,7 +487,9 @@ public class Thresholds {
             }
 
             // get the minimum value
-            double minimum = pcp.getPoint()[0];
+            double minimum = 0.0;
+            if(pcp != null)
+            	minimum = pcp.getPoint()[0];
             maxH = (Math.exp(minimum) > maxH) ? Math.exp(minimum) : maxH;
             sumH += Math.exp(minimum);
             h.set(it - 1, 0, Math.exp(minimum));

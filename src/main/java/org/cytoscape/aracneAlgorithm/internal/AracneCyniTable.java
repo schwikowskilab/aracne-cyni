@@ -3,11 +3,7 @@ package org.cytoscape.aracneAlgorithm.internal;
 import org.cytoscape.cyni.*;
 import org.cytoscape.model.CyTable;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Vector;
-import java.util.Collections;
-import java.util.Hashtable;
+import java.util.*;
 import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
 
 
@@ -118,6 +114,22 @@ public class AracneCyniTable extends CyniTable {
     
     public void setRankedValues(Vector<Gene> r,int idx) {
         rankedValues.set(idx, r);
+    }
+    
+    public void addNoise()
+    {
+    	Random rng = new Random(System.currentTimeMillis());
+      
+        for (int id = 0; id < nRows(); id++) {
+            
+            for (int mid = 0; mid < nColumns(); mid++) {
+            	if(hasValue(id,mid))
+            	{
+            		double noise = rng.nextDouble() * 1e-10;
+            		//setValue(id,mid,(Double)(doubleValue(id,mid)+noise));
+            	}
+            }
+        }
     }
     
     public class Sort_Gene implements Comparator<Gene> {

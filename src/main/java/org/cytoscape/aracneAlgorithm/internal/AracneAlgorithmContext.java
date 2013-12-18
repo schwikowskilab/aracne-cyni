@@ -32,13 +32,13 @@ public class AracneAlgorithmContext extends CyniAlgorithmContext implements Tuna
 	@Tunable(description="Mutual Information Steps: ",groups="Algorithm Definition")
 	public int miSteps = 6;
 	
-	@Tunable(description="Hub Genes File ",groups="Hub/Transcription Factor Definition",params="input=true")
+	@Tunable(description="Hub Genes File ",groups="Hub/Transcription Factor Definition",params="input=true;displayState=hidden")
 	public File hubFile ;
 	
-	@Tunable(description="Transcription Factor List: ",groups="Hub/Transcription Factor Definition",params="input=true")
+	@Tunable(description="Transcription Factor List: ",groups="Hub/Transcription Factor Definition",params="input=true;displayState=hidden")
 	public File TFFile ;
 	
-	@Tunable(description="Gene/TF column name mapping:",groups="Hub/Transcription Factor Definition")
+	@Tunable(description="Gene/TF column name mapping:",groups="Hub/Transcription Factor Definition",params="displayState=hidden")
 	public ListSingleSelection<String> colMapping ;
 	
 	@Tunable(description="Which threshold to use:",groups="Threshold Definition", xorChildren=true)
