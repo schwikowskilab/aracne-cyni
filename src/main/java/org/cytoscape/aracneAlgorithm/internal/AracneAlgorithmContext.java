@@ -13,44 +13,44 @@ import org.cytoscape.work.TunableValidator;
 
 public class AracneAlgorithmContext extends CyniAlgorithmContext implements TunableValidator {
 	
-	@Tunable(description="Aracne Mode:",groups="Algorithm Definition")
+	@Tunable(description="Aracne Mode:",groups="Algorithm Definition", gravity=1.0)
 	public ListSingleSelection<String> mode = new ListSingleSelection<String>(MODE_DISCOVERY,MODE_PREPROCESSING,MODE_COMPLETE);
 	
-	@Tunable(description="Mutual Information Algorithm Type:",groups="Algorithm Definition")
+	@Tunable(description="Mutual Information Algorithm Type:",groups="Algorithm Definition", gravity=2.0)
 	public ListSingleSelection<String> algoChooser = new ListSingleSelection<String>("Naive Bayes","Adaptive Partitioning","Fixed Bandwith","Variable Bandwith");
 	
 	
-	@Tunable(description="Manual Kernel Width Definition",dependsOn="algoChooser=Fixed Bandwith",groups="Algorithm Definition")
+	@Tunable(description="Manual Kernel Width Definition",dependsOn="algoChooser=Fixed Bandwith",groups="Algorithm Definition", gravity=3.0)
 	public boolean manualKernel = false;
 	
-	@Tunable(description="Kernel Width(0,1): ",dependsOn="manualKernel=true",groups="Algorithm Definition")
+	@Tunable(description="Kernel Width (0,1): ",dependsOn="manualKernel=true",groups="Algorithm Definition", gravity=4.0)
 	public double kernelWidth = 0.0;
 	
-	@Tunable(description="DPI Tolerance[0,1]: ",groups="Algorithm Definition")
+	@Tunable(description="DPI Tolerance [0,1]: ",groups="Algorithm Definition", gravity=5.0)
 	public double dpiTol = 0.0;
 	
-	@Tunable(description="Mutual Information Steps: ",groups="Algorithm Definition")
+	@Tunable(description="Mutual Information Steps: ",groups="Algorithm Definition", gravity=6.0)
 	public int miSteps = 6;
 	
-	@Tunable(description="Hub Genes File ",groups="Hub/Transcription Factor Definition",params="input=true;displayState=hidden")
+	@Tunable(description="Hub Genes File ",groups="Hub/Transcription Factor Definition",params="input=true;displayState=hidden", gravity=7.0)
 	public File hubFile ;
 	
-	@Tunable(description="Transcription Factor List: ",groups="Hub/Transcription Factor Definition",params="input=true;displayState=hidden")
+	@Tunable(description="Transcription Factor List: ",groups="Hub/Transcription Factor Definition",params="input=true;displayState=hidden", gravity=8.0)
 	public File TFFile ;
 	
-	@Tunable(description="Gene/TF column name mapping:",groups="Hub/Transcription Factor Definition",params="displayState=hidden")
+	@Tunable(description="Gene/TF column name mapping:",groups="Hub/Transcription Factor Definition",params="displayState=hidden", gravity=9.0)
 	public ListSingleSelection<String> colMapping ;
 	
-	@Tunable(description="Which threshold to use:",groups="Threshold Definition", xorChildren=true)
+	@Tunable(description="Which threshold to use:",groups="Threshold Definition", xorChildren=true, gravity=10.0)
 	public ListSingleSelection<String> thresholdChooser = new ListSingleSelection<String>("MI Threshold","P-Value Threshold");
 	
-	@Tunable(description="Mutual Information Threshold:",groups={"Threshold Definition","MI Threshold Definition"},xorKey="MI Threshold")
+	@Tunable(description="Mutual Information Threshold:",groups={"Threshold Definition","MI Threshold Definition"},xorKey="MI Threshold", gravity=11.0)
 	public double miTh = 0.5;
 	
-	@Tunable(description="P-Value Threshold(0,1]:",groups={"Threshold Definition","P-Value Threshold Definition"},xorKey="P-Value Threshold")
+	@Tunable(description="P-Value Threshold (0,1]:",groups={"Threshold Definition","P-Value Threshold Definition"},xorKey="P-Value Threshold", gravity=12.0)
 	public double pvalue = 0.5;
 	
-	@Tunable(description="Data Attributes", groups="Sources for Network Inference",params="displayState=collapsed")
+	@Tunable(description="Data Attributes", groups="Sources for Network Inference",params="displayState=collapsed", gravity=13.0)
 	public ListMultipleSelection<String> attributeList;
 
 	

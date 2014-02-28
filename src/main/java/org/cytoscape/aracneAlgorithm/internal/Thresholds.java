@@ -21,6 +21,7 @@ import org.apache.commons.math.special.Erf;
 import org.apache.commons.math.stat.regression.SimpleRegression;
 import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
 import org.cytoscape.cyni.CyCyniMetric;
+import org.cytoscape.work.TaskMonitor;
 
 /**
  * @author manjunath at c2b2 dot columbia dot edu
@@ -41,14 +42,18 @@ public class Thresholds {
     private CyCyniMetric selectedMetric;
     private String threshold_file;
     private String bandwith_file;
+    private TaskMonitor taskMonitor;
+    private boolean cancelled;
     
     
-    public Thresholds(AracneCyniTable table,CyCyniMetric selectedMetric,String threshold_file,String bandwith_file, String path)
+    public Thresholds(AracneCyniTable table,CyCyniMetric selectedMetric,String threshold_file,String bandwith_file, String path, TaskMonitor taskMonitor)
     {
     	cyniTable = table;
     	this.selectedMetric = selectedMetric;
     	this.bandwith_file = bandwith_file;
     	this.threshold_file = threshold_file;
+    	this.taskMonitor = taskMonitor;
+    	cancelled = false;
     	//System.out.println("path: " +path);
     	File test = new File(path);
     	if(!test.exists())
@@ -60,9 +65,9 @@ public class Thresholds {
         int ng = cyniTable.nRows();
         int ma = cyniTable.nColumns();
         DoubleMatrix2D data = new DenseDoubleMatrix2D(ng, ma);
-        System.out.println();
-        System.out.println("Generating Mutual Information threshold configuration...");
-        System.out.println("ma: " + ma);
+        //System.out.println();
+        taskMonitor.setStatusMessage("ARACNE Algorithm: Generating Mutual Information threshold configuration...");
+        //System.out.println("ma: " + ma);
         for (int i = 0; i < ma; i++) {
             for (int j = 0; j < ng; j++) {
                 data.set(j, i, cyniTable.doubleValue( j,i));
@@ -77,17 +82,21 @@ public class Thresholds {
 
         int rep = 3;
         int N = 100000;
+        double progress = 0.3/n.size();
         DoubleMatrix2D alpha = new DenseDoubleMatrix2D(n.size(), rep);
         DoubleMatrix2D beta = new DenseDoubleMatrix2D(n.size(), rep);
 
         for (int i = 0; i < n.size(); i++) {
-            System.out.println("Sample size = " + n.get(i));
+        	taskMonitor.setProgress(0.1+i*progress);
+            //System.out.println("Sample size = " + n.get(i));
             double h = 0;
             if (algorithm.equals( Mutual_Info.ALGORITHM.FIXED_BANDWIDTH)) {
                 h = a * Math.pow(Math.round(n.get(i)), b);
             }
             for (int j = 0; j < rep; j++) {
-                System.out.println("Repeat " + j);
+            	if (cancelled)
+					break;
+                //System.out.println("Repeat " + j);
                 int[] idx = Shuffle.sampleWithoutReplacement(ma, (int) Math.round(n.get(i)));
                 int[] rows = new int[ng];
                 for (int k = 0; k < ng; k++) {
@@ -97,11 +106,15 @@ public class Thresholds {
                 beta.set(i, j, coef[1]);
                 alpha.set(i, j, coef[0]);
             }
-            System.out.println("End Sample size = " + n.get(i));
+            //System.out.println("End Sample size = " + n.get(i));
         }
+        if (cancelled)
+			return;
         DoubleMatrix1D meanBeta = new DenseDoubleMatrix1D(n.size());
         double meanAlpha = 0;
         for (int i = 0; i < n.size(); i++) {
+        	if (cancelled)
+				break;
             double mb = 0;
             for (int j = 0; j < rep; j++) {
                 mb += beta.get(i, j);
@@ -110,6 +123,8 @@ public class Thresholds {
             meanBeta.set(i, (mb / (double) rep));
         }
 
+        if (cancelled)
+			return;
         meanAlpha /= (double) (n.size() * rep);
 
         SimpleRegression regression = new SimpleRegression();
@@ -169,6 +184,8 @@ public class Thresholds {
                 }
             }
 
+            if (cancelled)
+				break;
             index.set(0, j);
            /* double sigmaX = stats.getMarkerStat(Aracne.data.getMarkers().getMarker(i)).getBandwidth();
             double sigmaY = stats.getMarkerStat(Aracne.data.getMarkers().getMarker(j)).getBandwidth();
@@ -358,18 +375,22 @@ public class Thresholds {
             int ngene = cyniTable.nRows();
             double[] p = {0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
             int[] n = new int[p.length];
-            System.out.println();
-            System.out.println("Generating Kernel Width configuration...");
-            System.out.println("narray: " + narray);
+            //System.out.println();
+            taskMonitor.setStatusMessage("ARACNE Algorithm: Generating Kernel Width configuration...");
+            //System.out.println("narray: " + narray);
             for (int i = 0; i < p.length; i++) {
                 n[i] = (int) Math.floor(narray * p[i]);
             }
 
             DoubleMatrix2D results = new DenseDoubleMatrix2D(n.length, 3);
             for (int i = 0; i < n.length; i++) {
-                System.out.println("Sample size = " + n[i]);
+            	if (cancelled)
+					break;
+                //System.out.println("Sample size = " + n[i]);
                 for (int j = 0; j < 3; j++) {
-                    System.out.println("Repeat: " + j);
+                	if (cancelled)
+    					break;
+                    //System.out.println("Repeat: " + j);
                     int[] idx = Util.Shuffle.sampleWithoutReplacement(narray, n[i]);
                     DoubleMatrix2D subset = new DenseDoubleMatrix2D(ngene, idx.length);
                     for (int k = 0; k < idx.length; k++) {
@@ -381,6 +402,9 @@ public class Thresholds {
                     results.set(i, j, kw);
                 }
             }
+            
+            if (cancelled)
+				return;
 
             DoubleMatrix1D h_bar = new DenseDoubleMatrix1D(n.length);
             for (int i = 0; i < n.length; i++) {
@@ -395,6 +419,8 @@ public class Thresholds {
                 nMatrix.set(i, Math.log(n[i]));
             }
 
+            if (cancelled)
+				return;
             SimpleRegression regression = new SimpleRegression();
             DoubleMatrix2D temp = new DenseDoubleMatrix2D(n.length, 2);
             temp.viewColumn(1).assign(h_bar);
@@ -715,4 +741,8 @@ public class Thresholds {
     }
 
 
+    public void setCancel()
+	{
+		cancelled = true;
+	}
 }

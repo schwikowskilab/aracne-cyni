@@ -93,6 +93,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	private double miTh;
 	private String mode;
 	private double chosenTh;
+	private Thresholds thParams;
 	public static double KERNEL_ALPHA = 0.52477;
     public static double KERNEL_BETA = -0.24;
     public static double THRESHOLD_ALPHA = 1.062;
@@ -147,6 +148,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		fileHub = null;
 		fileTFList = null;
+		thParams = null;
 		mapCol = context.colMapping.getSelectedValue();
 		
 		mode = context.mode.getSelectedValue();
@@ -177,7 +179,6 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		int nRows;
 		CyNode mapRowNodes[];
 		boolean ids[];
-		Thresholds thParams = null;
 		Map<Integer, Integer> transfac = new HashMap<Integer, Integer>();
 		ArrayList<String> geneNames;
 		
@@ -190,7 +191,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		taskMonitor.setTitle("ARACNE Algorithm");
         
-        taskMonitor.setStatusMessage("ARACNE Algorithm running ...");
+        taskMonitor.setStatusMessage("ARACNE Algorithm: Pre-processing data ...");
 		taskMonitor.setProgress(progress);
 		
 		//Create new network
@@ -200,8 +201,17 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		//Check if a network is associated to the selected table
 		networkSelected = netUtils.getNetworkAssociatedToTable(mytable);
 		
+		Map<String,Object> params = new HashMap<String,Object>();
+		params.put("Type", algorithm);
+		selectedMetric.setParameters(params);
+		
 		// Create the CyniTable
-		AracneCyniTable data = new AracneCyniTable(mytable,attributeArray.toArray(new String[0]), false, false, selectedOnly);
+		CyniTable data = selectedMetric.getCyniTable(mytable,attributeArray.toArray(new String[0]), false, false, selectedOnly);
+		
+		params.put("KernelWidth", bandwith);
+		params.put("MiSteps", miSteps);
+		params.put("Size", data.nColumns());
+		selectedMetric.setParameters(params);
 		
 		
 		ids = new boolean[data.nRows()];
@@ -277,12 +287,12 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			}
 		}
 		
-		data.computeMarkerVariance();
-        data.computeBandwidth();
-        data.computeMarkerRanks();
+		//data.computeMarkerVariance();
+        //data.computeBandwidth();
+        //data.computeMarkerRanks();
         
-        if(algorithm.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || algorithm.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
-        	data.addNoise();
+        /*if(algorithm.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || algorithm.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
+        	data.addNoise();*/
         
 		
 		//Set the name of the network, another name could be chosen
@@ -308,43 +318,47 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		mapRowNodes = new CyNode[nRows];
 		Arrays.fill(mapRowNodes, null);
 		
-		taskMonitor.setStatusMessage("ARACNE Algorithm running: Statistics calculated ...");	
+		taskMonitor.setStatusMessage("ARACNE Algorithm: Statistics calculated ...");	
 		
-		Map<String,Object> params = new HashMap<String,Object>();
-		params.put("KernelWidth", bandwith);
-		params.put("MiSteps", miSteps);
-		params.put("Size", data.nColumns());
-		params.put("Type", algorithm);
-		selectedMetric.setParameters(params);
 		
 		if(mode.matches(AracneAlgorithmContext.MODE_PREPROCESSING) || mode.matches(AracneAlgorithmContext.MODE_COMPLETE))
         {
-			taskMonitor.setStatusMessage("ARACNE Algorithm running: Calculating Thresholds ...");
-        	AracneCyniTable data2 = new AracneCyniTable(mytable,attributeArray.toArray(new String[0]), false, false, selectedOnly);
-        	data2.computeMarkerVariance();
+			taskMonitor.setStatusMessage("ARACNE Algorithm: Calculating Thresholds ...");
+        	AracneCyniTable data2 = new AracneCyniTable(mytable,attributeArray.toArray(new String[0]), false, false, selectedOnly,algorithm);
+        	/*data2.computeMarkerVariance();
             data2.computeBandwidth();
-            data2.computeMarkerRanks();
+            data2.computeMarkerRanks();*/
             
-            if(algorithm.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || algorithm.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
-            	data2.addNoise();
+           /* if(algorithm.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || algorithm.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
+            	data2.addNoise();*/
             
-            thParams = new Thresholds (data2,selectedMetric,threshold_file,kernel_file,aracne_path );
+            thParams = new Thresholds (data2,selectedMetric,threshold_file,kernel_file,aracne_path ,taskMonitor);
             progress = 0.1;
             taskMonitor.setProgress(0.1);
         }
 	
-		
+		if (cancelled)
+			return;
 		if (mode.matches(AracneAlgorithmContext.MODE_PREPROCESSING)) {
 			thParams.generateKernelWidthConfiguration(algorithm);
+			if (cancelled)
+				return;
             findKernelWidth(data.nColumns());
             params.put("KernelWidth", bandwith);
 			selectedMetric.setParameters(params);
+			selectedMetric.initMetric();
             thParams.generateMutualInformationThresholdConfiguration(algorithm);
+            taskMonitor.setStatusMessage("ARACNE Algorithm: Saving Thresholds ...");
             newNetwork.dispose();
             return;
         } else if (mode.matches(AracneAlgorithmContext.MODE_COMPLETE)) {
+        	selectedMetric.initMetric();
         	thParams.generateKernelWidthConfiguration(algorithm);
+        	if (cancelled)
+				return;
         	thParams.generateMutualInformationThresholdConfiguration(algorithm);
+        	progress = 0.3;
+        	taskMonitor.setProgress(progress);
         }
         else
         {
@@ -357,14 +371,17 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		else
 			chosenTh = miTh;
 		
-		
+		params.clear();
+		params.put("KernelWidth", bandwith);
+		selectedMetric.setParameters(params);
+		selectedMetric.initMetric();
 		//System.out.println("before creating matrix");
 		matrix = new MatrixEdgePair(nRows,chosenTh);
 		//System.out.println("after creating matrix");
 		// Create the thread pools
 		ExecutorService executor = Executors.newFixedThreadPool(nThreads);
 		
-		taskMonitor.setStatusMessage("ARACNE Algorithm running: Calculating MI for all possible pairs ...");
+		taskMonitor.setStatusMessage("ARACNE Algorithm: Calculating MI for all possible pairs ...");
 
 		for (int i = 0; i < nRows; i++) 
 		{
@@ -401,7 +418,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		if(dpiTol < 1)
 		{
-			taskMonitor.setStatusMessage("ARACNE Algorithm running: Applying DPI ...");
+			taskMonitor.setStatusMessage("ARACNE Algorithm: Applying DPI ...");
 		
 			Vector<ArrayValuePair> miVector = new Vector<ArrayValuePair>();
 	        // put all the values of the i-th row in the matrix on a vector for sorting
@@ -486,7 +503,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		if (!cancelled)
 		{
-			taskMonitor.setStatusMessage("ARACNE Algorithm running: Building network view ...");
+			taskMonitor.setStatusMessage("ARACNE Algorithm: Building network view ...");
 			for (int i = 0; i < nRows; i++) 
 			{
 				if (cancelled)
@@ -507,7 +524,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 						if(mapRowNodes[i] == null)
 						{
 							node1 = newNetwork.addNode();
-							netUtils.cloneRow(newNetwork,CyNode.class,mytable.getRow(data.getRowLabel(i)), newNetwork.getRow(node1));
+							netUtils.cloneNodeRow(newNetwork,mytable.getRow(data.getRowLabel(i)),node1);
 							if(newNetwork.getRow(node1).get(CyNetwork.NAME,String.class ) == null || newNetwork.getRow(node1).get(CyNetwork.NAME,String.class ).isEmpty() == true)
 							{
 								if(mytable.getPrimaryKey().getType().equals(String.class) && networkSelected == null)
@@ -523,7 +540,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 						if(mapRowNodes[j] == null)
 						{
 							node2 = newNetwork.addNode();
-							netUtils.cloneRow(newNetwork,CyNode.class,mytable.getRow(data.getRowLabel(j)), newNetwork.getRow(node2));
+							netUtils.cloneNodeRow(newNetwork,mytable.getRow(data.getRowLabel(j)), node2);
 							if(newNetwork.getRow(node2).get(CyNetwork.NAME,String.class ) == null || newNetwork.getRow(node2).get(CyNetwork.NAME,String.class ).isEmpty() == true)
 							{
 								if(mytable.getPrimaryKey().getType().equals(String.class) && networkSelected == null)
@@ -658,9 +675,9 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	private class ThreadedGetMetric implements Runnable {
 		private ArrayList<Integer> index2;
 		private int index1;
-		private AracneCyniTable tableData;
+		private CyniTable tableData;
 		
-		ThreadedGetMetric(AracneCyniTable data,int index1, ArrayList<Integer> parentsToIndex)
+		ThreadedGetMetric(CyniTable data,int index1, ArrayList<Integer> parentsToIndex)
 		{
 			this.index2 = new ArrayList<Integer>( parentsToIndex);
 			this.index1 = index1;
@@ -740,9 +757,18 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			temp = mi.get(i);
 			if(temp == null)
 			{
-				temp = new ConcurrentHashMap<Integer,Double>();
-				temp.put(j,score);
-				mi.put(i, temp);
+				synchronized(this)
+				{
+					temp = mi.get(i);
+					if(temp == null)
+					{
+						temp = new ConcurrentHashMap<Integer,Double>();
+						temp.put(j,score);
+						mi.put(i, temp);
+					}
+					else
+						temp.put(j,score);
+				}
 				return;
 			}
 			else
@@ -821,6 +847,12 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
         }
     }
 
-	
+    @Override
+	public void cancel() {
+		cancelled = true;
+		if(thParams != null)
+			thParams.setCancel();
+		
+	}
 	
 }

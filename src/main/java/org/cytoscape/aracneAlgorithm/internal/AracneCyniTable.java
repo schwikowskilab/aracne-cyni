@@ -5,6 +5,7 @@ import org.cytoscape.model.CyTable;
 
 import java.util.*;
 import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
+import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.Mutual_Info.ALGORITHM;
 
 
 
@@ -15,9 +16,17 @@ public class AracneCyniTable extends CyniTable {
 	private double variance[];
 
 
-	public AracneCyniTable(  CyTable table, String[] attributes, boolean transpose, boolean ignoreMissing, boolean selectedOnly) {
+	public AracneCyniTable(  CyTable table, String[] attributes, boolean transpose, boolean ignoreMissing, boolean selectedOnly,ALGORITHM type) {
 		super(table,attributes,transpose,ignoreMissing,  selectedOnly);
 		rankedValues = new Vector<Vector<Gene>>(this.nRows());
+		if(!hasAnyMissingValue())
+		{
+			computeMarkerVariance();
+			computeBandwidth();
+			computeMarkerRanks();
+			if(type.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || type.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
+	        	addNoise();
+		}
 	}
 	
 	public AracneCyniTable(CyniTable table)
@@ -126,7 +135,7 @@ public class AracneCyniTable extends CyniTable {
             	if(hasValue(id,mid))
             	{
             		double noise = rng.nextDouble() * 1e-10;
-            		//setValue(id,mid,(Double)(doubleValue(id,mid)+noise));
+            		setValue(id,mid,(Double)(doubleValue(id,mid)+noise));
             	}
             }
         }
