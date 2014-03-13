@@ -94,11 +94,11 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	private String mode;
 	private double chosenTh;
 	private Thresholds thParams;
-	public static double KERNEL_ALPHA = 0.52477;
-    public static double KERNEL_BETA = -0.24;
-    public static double THRESHOLD_ALPHA = 1.062;
-    public static double THRESHOLD_BETA = -48.7;
-    public static double THRESHOLD_GAMMA = -0.634;
+	double KERNEL_ALPHA = 0.52477;
+    double KERNEL_BETA = -0.24;
+    double THRESHOLD_ALPHA = 1.062;
+    double THRESHOLD_BETA = -48.7;
+    double THRESHOLD_GAMMA = -0.634;
     /** Default configuration directory used for all Cytoscape configuration files */
 	public static final String DEFAULT_CONFIG_DIR = CyProperty.DEFAULT_PROPS_CONFIG_DIR ;
 	
@@ -108,6 +108,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	
 	private String threshold_file = join(File.separator, DEF_USER_DIR, DEFAULT_CONFIG_DIR, "3", "aracne","config_threshold.txt");
 	private String aracne_path = join(File.separator, DEF_USER_DIR, DEFAULT_CONFIG_DIR, "3", "aracne");
+	private static int iteration = 0;
 
 	
 
@@ -145,7 +146,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			this.usePValue = true;
 		else
 			this.usePValue = false;
-		
+		iteration++;
 		fileHub = null;
 		fileTFList = null;
 		thParams = null;
@@ -176,10 +177,11 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		Double step;
 		CyEdge edge;
 		ArrayList<Integer> index = new ArrayList<Integer>(1);
-		int nRows;
+		int nRows,iterSize,id;
 		CyNode mapRowNodes[];
-		boolean ids[];
+		Vector <Integer>ids;
 		Map<Integer, Integer> transfac = new HashMap<Integer, Integer>();
+		ArrayList<NodePair> removedNodes = new ArrayList<NodePair>();
 		ArrayList<String> geneNames;
 		
 		index.add(1);
@@ -191,7 +193,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		
 		taskMonitor.setTitle("ARACNE Algorithm");
         
-        taskMonitor.setStatusMessage("ARACNE Algorithm: Pre-processing data ...");
+        taskMonitor.setStatusMessage("ARACNE Algorithm: Initializing Aracne data ...");
 		taskMonitor.setProgress(progress);
 		
 		//Create new network
@@ -213,9 +215,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		params.put("Size", data.nColumns());
 		selectedMetric.setParameters(params);
 		
-		
-		ids = new boolean[data.nRows()];
-		Arrays.fill(ids, true);
+		ids = new Vector<Integer>();
 		
 		if(data.hasAnyMissingValue())
 		{
@@ -231,72 +231,65 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			return;
 		}
 		
-		if(fileHub != null)
+		if(!mode.matches(AracneAlgorithmContext.MODE_PREPROCESSING))
 		{
+			if(fileHub != null)
+			{
+				taskMonitor.setStatusMessage("ARACNE Algorithm: Reading Hub List ...");	
+				CyRow selectedRow = null;
+				if(readProbeList(fileHub.toString(),geneNames) != -1)
+				{
+					for(int i=0;i<geneNames.size();i++)
+					{
+						for(CyRow row : mytable.getAllRows())
+						{
+							if(row.get(mapCol, String.class).matches(geneNames.get(i)))
+							{
+								selectedRow = row;
+								break;
+							}
+						}
+						if(selectedRow != null)
+						{
+							id = data.getRowIndex(selectedRow.getRaw(mytable.getPrimaryKey().getName()));
+							selectedRow = null;
+							if(id != -1)
+								ids.add(id);
+						}
+					}
+				}
+			}
 			
-			Arrays.fill(ids, false);
-			CyRow selectedRow = null;
-			int id;
-			if(readProbeList(fileHub.toString(),geneNames) != -1)
+			if(fileTFList != null)
 			{
-				for(int i=0;i<geneNames.size();i++)
+				taskMonitor.setStatusMessage("ARACNE Algorithm: Reading Transcription Factor List ...");	
+				CyRow selectedRow = null;
+				if(readProbeList(fileTFList.toString(),geneNames) != -1)
 				{
-					for(CyRow row : mytable.getAllRows())
+					for(int i=0;i<geneNames.size();i++)
 					{
-						if(row.get(mapCol, String.class).matches(geneNames.get(i)))
+						for(CyRow row : mytable.getAllRows())
 						{
-							selectedRow = row;
-							break;
+							if(row.get(mapCol, String.class).matches(geneNames.get(i)))
+							{
+								selectedRow = row;
+								break;
+							}
 						}
-					}
-					if(selectedRow != null)
-					{
-						id = data.getRowIndex(selectedRow.getRaw(mytable.getPrimaryKey().getName()));
-						selectedRow = null;
-						if(id != -1)
-							ids[id] = true;
+						if(selectedRow != null)
+						{
+							id = data.getRowIndex(selectedRow.getRaw(mytable.getPrimaryKey().getName()));
+							selectedRow = null;
+							if(id != -1)
+								transfac.put(id, 1);
+						}
 					}
 				}
 			}
 		}
-		
-		if(fileTFList != null)
-		{
-			CyRow selectedRow = null;
-			int id;
-			if(readProbeList(fileTFList.toString(),geneNames) != -1)
-			{
-				for(int i=0;i<geneNames.size();i++)
-				{
-					for(CyRow row : mytable.getAllRows())
-					{
-						if(row.get(mapCol, String.class).matches(geneNames.get(i)))
-						{
-							selectedRow = row;
-							break;
-						}
-					}
-					if(selectedRow != null)
-					{
-						id = data.getRowIndex(selectedRow.getRaw(mytable.getPrimaryKey().getName()));
-						selectedRow = null;
-						if(id != -1)
-							transfac.put(id, 1);
-					}
-				}
-			}
-		}
-		
-		//data.computeMarkerVariance();
-        //data.computeBandwidth();
-        //data.computeMarkerRanks();
-        
-        /*if(algorithm.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || algorithm.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
-        	data.addNoise();*/
-        
 		
 		//Set the name of the network, another name could be chosen
-		networkName = "ARACNE Inference " + newNetwork.getSUID();
+		networkName = "ARACNE Inference " + iteration;
 		if (newNetwork != null && networkName != null) {
 			CyRow netRow = newNetwork.getRow(newNetwork);
 			netRow.set(CyNetwork.NAME, networkName);
@@ -313,7 +306,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		netTable.getRow(newNetwork.getSUID()).set("Mutual Information Algorithm", algorithm.toString());
 		
 		nRows = data.nRows();
-		step = 1.0 / nRows;
+		
 		
 		mapRowNodes = new CyNode[nRows];
 		Arrays.fill(mapRowNodes, null);
@@ -375,45 +368,64 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		params.put("KernelWidth", bandwith);
 		selectedMetric.setParameters(params);
 		selectedMetric.initMetric();
-		//System.out.println("before creating matrix");
-		matrix = new MatrixEdgePair(nRows,chosenTh);
-		//System.out.println("after creating matrix");
+		
+		if(ids.isEmpty())
+		{
+			iterSize = nRows;
+			step = 1.0 / nRows;
+			matrix = new MatrixEdgePair(nRows,chosenTh);
+		}
+		else
+		{
+			iterSize = ids.size();
+			step = 1.0 / iterSize;
+			matrix = new MatrixEdgePair(chosenTh,ids);
+		}
+		
 		// Create the thread pools
 		ExecutorService executor = Executors.newFixedThreadPool(nThreads);
 		
 		taskMonitor.setStatusMessage("ARACNE Algorithm: Calculating MI for all possible pairs ...");
 
-		for (int i = 0; i < nRows; i++) 
+		for (int i = 0; i < iterSize; i++) 
 		{
-					if (cancelled)
-						break;
+			int j;
+			
+			if (cancelled)
+				break;
 					
-					if(!ids[i])
-						continue;
+			if(ids.isEmpty())
+			{
+				id = i;
+				j = i+1;
+			}
+			else
+			{
+				id = ids.get(i);
+				j = 0;
+			}
 
-					for (int j = i+1; j < nRows; j++) 
-					{
-						if(!ids[j])
-							continue;
-						if (cancelled)
-							break;
+			for (; j < nRows; j++) 
+			{
 						
-						index.set(0, j);
-						executor.execute(new ThreadedGetMetric(data,i,index));
+				if (cancelled)
+					break;
 						
-						//matrix.setScore(i, j, selectedMetric.getMetric(data, data, i, index));
+				index.set(0, j);
+				executor.execute(new ThreadedGetMetric(data,id,index));
 						
-					}
-					executor.shutdown();
-					// Wait until all threads are finish
-					try {
-			         	executor.awaitTermination(7, TimeUnit.DAYS);
-			        } catch (Exception e) {}
+						
+			}
+			executor.shutdown();
+			// Wait until all threads are finish
+			try {
+			   	executor.awaitTermination(7, TimeUnit.DAYS);
+			} catch (Exception e) {}
 					
 					
-					progress = progress + step;
-					taskMonitor.setProgress(progress);
-					executor = Executors.newFixedThreadPool(nThreads);
+			progress = progress + step;
+			taskMonitor.setProgress(progress);
+			executor = Executors.newFixedThreadPool(nThreads);
 		}
 		
 		if(dpiTol < 1)
@@ -426,18 +438,21 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	        // it should actually be called EdgeMIPair here. They share the same
 	        // structure consisting of two fields: a int and a double. The assoiciated
 	        // sorting class will sort by the double fields.
-	        for (int i = 0; i < nRows; i++) {
+	        for (int i = 0; i < iterSize; i++) {
 	        	miVector.clear();
 	        	if (cancelled)
 					break;
-	        	if(!ids[i])
-					continue;
+	        	if(ids.isEmpty())
+					id = i;
+				else
+					id = ids.get(i);
+					
 	        	 
 	        	for (int j = 0; j < nRows; j++) 
 				{
 	        		//if(edgePresence[i][j])
-	        		if(matrix.getPresence(i, j))
-	        			miVector.add(new ArrayValuePair(j,matrix.getScore(i, j)));
+	        		if(matrix.getPresence(id, j))
+	        			miVector.add(new ArrayValuePair(j,matrix.getScore(id, j)));
 				}
 	        	
 	        	 // sort the vector
@@ -473,30 +488,26 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	                    	// if TF annotation information is provided, the triangle will be
 	                        // broken only if certein logic is met
 	                        if (!(transfac.isEmpty())) {
-	                            if (protectedByTFLogic(transfac, i, geneId1, geneId2)) {
+	                            if (protectedByTFLogic(transfac, id, geneId1, geneId2)) {
 	                                continue;
 	                            }
 	                        }
 
-	                    	//if(newNetwork.containsEdge(mapRowNodes[i], mapRowNodes[geneId1]))
-	                        //if(edgePresence[i][geneId1] || edgePresence[geneId1][i])
-	                        if(matrix.getPresence(i, geneId1))
-	                    	{
-	                        	//matrix.setScore(i, geneId1, -1.0);
-	                        	matrix.removeScore(i, geneId1);
-	                    		//edgePresence[i][geneId1]= false;
-								//edgePresence[geneId1][i]= false;
-	                    		//edgeList = newNetwork.getConnectingEdgeList(mapRowNodes[i], mapRowNodes[geneId1], CyEdge.Type.UNDIRECTED);
-	                    		//rootMgr.getRootNetwork(newNetwork).removeEdges(edgeList);
-	                    		//newNetwork.getDefaultEdgeTable().deleteRows(Collections.singletonList(edgeList.get(0).getSUID()));
-	                    		//newNetwork.removeEdges(edgeList);
-	                    		//System.out.println("removed " + i + " " + geneId1);
-	                    	}
+	                        removedNodes.add(new NodePair(id, geneId1));
+	                        	
 	                        break;
 	                    }
 	                }
 	            }
 	
+	        }
+	        
+	        if(removedNodes.size() > 0)
+	        {
+	        	for(NodePair entry : removedNodes)
+	        		matrix.removeScore(entry.node1,entry.node2);
+	        	
+	        	removedNodes.clear();
 	        }
 
 		}
@@ -504,37 +515,46 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		if (!cancelled)
 		{
 			taskMonitor.setStatusMessage("ARACNE Algorithm: Building network view ...");
-			for (int i = 0; i < nRows; i++) 
+			for (int i = 0; i < iterSize; i++) 
 			{
+				int j;
+				
 				if (cancelled)
 					break;
 						
-				if(!ids[i])
-					continue;
-
-				for (int j = i+1; j < nRows; j++) 
+				if(ids.isEmpty())
 				{
-					if(!ids[j])
-						continue;
+					id = i;
+					j = i+1;
+				}
+				else
+				{
+					id = ids.get(i);
+					j = 0;
+				}
+
+				for( ; j < nRows; j++) 
+				{
+					
 					if (cancelled)
 						break;
 							
-					if(matrix.getPresence(i, j))
+					if(matrix.getPresence(id, j))
 					{
-						if(mapRowNodes[i] == null)
+						if(mapRowNodes[id] == null)
 						{
 							node1 = newNetwork.addNode();
-							netUtils.cloneNodeRow(newNetwork,mytable.getRow(data.getRowLabel(i)),node1);
+							netUtils.cloneNodeRow(newNetwork,mytable.getRow(data.getRowLabel(id)),node1);
 							if(newNetwork.getRow(node1).get(CyNetwork.NAME,String.class ) == null || newNetwork.getRow(node1).get(CyNetwork.NAME,String.class ).isEmpty() == true)
 							{
 								if(mytable.getPrimaryKey().getType().equals(String.class) && networkSelected == null)
-									newNetwork.getRow(node1).set(CyNetwork.NAME,mytable.getRow(data.getRowLabel(i)).get(mytable.getPrimaryKey().getName(),String.class));
+									newNetwork.getRow(node1).set(CyNetwork.NAME,mytable.getRow(data.getRowLabel(id)).get(mytable.getPrimaryKey().getName(),String.class));
 								else
 									newNetwork.getRow(node1).set(CyNetwork.NAME, "Node " + numNodes);
 							}
 							if(newNetwork.getRow(node1).get(CyNetwork.SELECTED,Boolean.class ) == true)
 								newNetwork.getRow(node1).set(CyNetwork.SELECTED, false);
-							mapRowNodes[i] =node1;
+							mapRowNodes[id] =node1;
 							numNodes++;
 						}
 						if(mapRowNodes[j] == null)
@@ -554,13 +574,13 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 							numNodes++;
 						}
 										
-						if(!newNetwork.containsEdge(mapRowNodes[i], mapRowNodes[j]))
+						if(!newNetwork.containsEdge(mapRowNodes[id], mapRowNodes[j]))
 						{
-							edge = newNetwork.addEdge(mapRowNodes[i], mapRowNodes[j], false);
-							newNetwork.getRow(edge).set("Mutual Information",matrix.getScore(i, j));
-							newNetwork.getRow(edge).set(CyEdge.INTERACTION,((Double)matrix.getScore(i, j)).toString());
+							edge = newNetwork.addEdge(mapRowNodes[id], mapRowNodes[j], false);
+							newNetwork.getRow(edge).set("Mutual Information",matrix.getScore(id, j));
+							newNetwork.getRow(edge).set(CyEdge.INTERACTION,((Double)matrix.getScore(id, j)).toString());
 							newNetwork.getRow(edge).set("Metric",selectedMetric.toString());
-							newNetwork.getRow(edge).set("name", newNetwork.getRow(mapRowNodes[i]).get("name", String.class)
+							newNetwork.getRow(edge).set("name", newNetwork.getRow(mapRowNodes[id]).get("name", String.class)
 									+ " (Aracne) " + newNetwork.getRow( mapRowNodes[j]).get("name", String.class));
 						}
 					}
@@ -584,7 +604,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	}
     void findKernelWidth(int n) {
         File f = new File(kernel_file);
-        f.deleteOnExit();
+        //f.deleteOnExit();
         if (f.exists()) {
             try {
                 BufferedReader br = new BufferedReader(new FileReader(f));
@@ -605,7 +625,7 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
     
     double findThreshold(int n) {
         File f = new File(threshold_file);
-        f.deleteOnExit();
+        //f.deleteOnExit();
         if (f.exists()) {
             try {
                 BufferedReader br = new BufferedReader(new FileReader(f));
@@ -694,17 +714,28 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 	}
 	
 	class MatrixEdgePair{
-		//double MI[];
 		Map<Integer, Map<Integer,Double>> mi;
 		double th;
 		int size;
+		boolean simetric;
 		
 		MatrixEdgePair(int size, double threshold)
 		{
-			//MI = new double[(size*size - size)/2+1];
 			mi = new ConcurrentHashMap<Integer,  Map<Integer,Double>>();
 			th = threshold;
+			simetric = true;
 			this.size = size;
+			for(int i=0; i<size;i++)
+				mi.put(i, new ConcurrentHashMap<Integer,Double>());
+		}
+		MatrixEdgePair( double threshold, Vector<Integer> hubIds)
+		{
+			mi = new ConcurrentHashMap<Integer,  Map<Integer,Double>>();
+			th = threshold;
+			simetric = false;
+			size = Collections.max(hubIds);
+			for(int i=0; i<hubIds.size();i++)
+				mi.put(hubIds.get(i), new ConcurrentHashMap<Integer,Double>());
 		}
 		
 		boolean getPresence(int row, int col)
@@ -712,8 +743,6 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			if(row == col)
 				return false;
 			
-			//i= Math.min(row, col);
-			//j = Math.max(row, col);
 			if(getScore(row,col)> th)
 				return true;
 			else
@@ -723,23 +752,44 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 		double getScore(int row, int col)
 		{
 			int i,j;
+			double score = -1;
 			Map<Integer,Double> temp;
 			if(row == col)
 				return -1.0;
-			
-			i= Math.min(row, col);
-			j = Math.max(row, col);
-			temp = mi.get(i);
-			if(temp == null)
-				return (th-1);
+			if(simetric)
+			{
+				i= Math.min(row, col);
+				j = Math.max(row, col);
+			}
 			else
 			{
-				if(temp.get(j) == null)
-					return (th-1);
-				else
-					return temp.get(j);
+				i = row;
+				j = col;
 			}
-			//return MI[i*(size-1)-(i-1)*i/2+j-i-1];
+			temp = mi.get(i);
+			
+			if(temp != null)
+			{
+				if(temp.get(j) != null)
+					score = temp.get(j);
+			}
+			
+			if(!simetric && score == -1)
+			{
+				i = col;
+				j = row;
+				
+				temp = mi.get(i);
+				
+				if(temp != null)
+				{
+					if(temp.get(j) != null)
+						score = temp.get(j);
+				}
+				
+			}
+			
+			return score;
 		}
 		
 		void setScore(int row, int col, double score)
@@ -749,35 +799,27 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			if(row == col)
 				return;
 			
-			//System.out.println("score: " + score + " th: " + th);
 			if(score < th)
 				return;
-			i= Math.min(row, col);
-			j = Math.max(row, col);
-			temp = mi.get(i);
-			if(temp == null)
+			if(simetric)
 			{
-				synchronized(this)
-				{
-					temp = mi.get(i);
-					if(temp == null)
-					{
-						temp = new ConcurrentHashMap<Integer,Double>();
-						temp.put(j,score);
-						mi.put(i, temp);
-					}
-					else
-						temp.put(j,score);
-				}
-				return;
+				i= Math.min(row, col);
+				j = Math.max(row, col);
+				if(i > size || j > size)
+					return;
 			}
 			else
 			{
-				temp.put(j,score);
-				return;
-					
+				i = row;
+				j = col;
+				if(i > size )
+					return;
 			}
-			//MI[i*(size-1)-(i-1)*i/2+j-i-1] = score;
+			
+			temp = mi.get(i);
+			temp.put(j,score);
+			
+			
 		}
 		void removeScore(int row, int col)
 		{
@@ -786,15 +828,35 @@ public class AracneAlgorithmTask extends AbstractCyniTask {
 			if(row == col)
 				return;
 			
-			i= Math.min(row, col);
-			j = Math.max(row, col);
-			temp = mi.get(i);
-			
-			if(temp != null)
+			if(simetric)
 			{
-				if(temp.get(j) != null)
-					temp.remove(j);
+				i= Math.min(row, col);
+				j = Math.max(row, col);
+				if(i > size || j > size)
+					return;
 			}
+			else
+			{
+				i = row;
+				j = col;
+				if(i > size )
+					return;
+			}
+			temp = mi.get(i);
+					
+			if(temp.get(j) != null)
+				temp.remove(j);
+
+		}
+	}
+	
+	static class NodePair {
+	
+		public int node1,node2;
+		NodePair(int node1,int node2)
+		{
+			this.node1 = node1;
+			this.node2 = node2;
 			
 		}
 	}

@@ -50,6 +50,7 @@ public class MutualInfoMetric extends AbstractCyniMetric {
 		mi = null;
 		type =  Mutual_Info.ALGORITHM.FIXED_BANDWIDTH;
 		size = 1;
+		kernelWidth = 0;
 	}
 	
     private  int miSteps = 6;
