@@ -1,4 +1,4 @@
-package org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric;
+package fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric;
 
 import cern.colt.function.DoubleDoubleFunction;
 import cern.colt.list.DoubleArrayList;

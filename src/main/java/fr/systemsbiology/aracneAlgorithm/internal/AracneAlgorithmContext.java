@@ -1,9 +1,9 @@
-package org.cytoscape.aracneAlgorithm.internal;
+package fr.systemsbiology.aracneAlgorithm.internal;
 
 import java.io.*;
 import java.util.List;
 
-import org.cytoscape.cyni.CyniAlgorithmContext;
+import fr.systemsbiology.cyni.CyniAlgorithmContext;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.work.TunableValidator.ValidationState;
 import org.cytoscape.work.util.*;

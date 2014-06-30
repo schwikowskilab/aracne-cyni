@@ -1,11 +1,11 @@
-package org.cytoscape.aracneAlgorithm.internal;
+package fr.systemsbiology.aracneAlgorithm.internal;
 
 import org.cytoscape.application.swing.CySwingApplication;
 
-import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
+import fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric.*;
 
 import org.cytoscape.application.swing.CyAction;
-import org.cytoscape.cyni.*;
+import fr.systemsbiology.cyni.*;
 
 import org.osgi.framework.BundleContext;
 

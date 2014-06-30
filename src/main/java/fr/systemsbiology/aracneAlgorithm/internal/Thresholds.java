@@ -1,4 +1,4 @@
-package org.cytoscape.aracneAlgorithm.internal;
+package fr.systemsbiology.aracneAlgorithm.internal;
 
 import cern.colt.function.DoubleFunction;
 import cern.colt.matrix.DoubleMatrix1D;
@@ -19,8 +19,8 @@ import org.apache.commons.math.optimization.PointCostPair;
 import org.apache.commons.math.random.NotPositiveDefiniteMatrixException;
 import org.apache.commons.math.special.Erf;
 import org.apache.commons.math.stat.regression.SimpleRegression;
-import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
-import org.cytoscape.cyni.CyCyniMetric;
+import fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric.*;
+import fr.systemsbiology.cyni.CyCyniMetric;
 import org.cytoscape.work.TaskMonitor;
 
 /**

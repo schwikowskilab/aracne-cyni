@@ -1,11 +1,11 @@
-package org.cytoscape.aracneAlgorithm.internal;
+package fr.systemsbiology.aracneAlgorithm.internal;
 
-import org.cytoscape.cyni.*;
+import fr.systemsbiology.cyni.*;
 import org.cytoscape.model.CyTable;
 
 import java.util.*;
-import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
-import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.Mutual_Info.ALGORITHM;
+import fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric.*;
+import fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric.Mutual_Info.ALGORITHM;
 
 
 
