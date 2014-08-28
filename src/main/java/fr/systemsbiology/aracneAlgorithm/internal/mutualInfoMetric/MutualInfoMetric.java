@@ -27,10 +27,11 @@
   along with this library; if not, write to the Free Software Foundation,
   Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-package org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric;
+package fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric;
 
-import org.cytoscape.aracneAlgorithm.internal.AracneCyniTable;
-import org.cytoscape.cyni.*;
+import fr.systemsbiology.aracneAlgorithm.internal.AracneCyniTable;
+import fr.systemsbiology.cyni.*;
+import org.cytoscape.model.CyTable;
 
 import java.util.*;
 
@@ -45,28 +46,18 @@ public class MutualInfoMetric extends AbstractCyniMetric {
 	 */
 	public MutualInfoMetric() {
 		super("MIAracneMetric","Continous Mutual Information Metric");
-		addType(CyniMetricTypes.INPUT_NUMBERS.toString());
+		addTag(CyniMetricTags.INPUT_NUMBERS.toString());
 		mi = null;
+		type =  Mutual_Info.ALGORITHM.FIXED_BANDWIDTH;
+		size = 1;
+		kernelWidth = 0;
 	}
 	
     private  int miSteps = 6;
     private double kernelWidth;
     private int size;
     private Mutual_Info.ALGORITHM type;
-    private Mutual_Info mi;
-    static private final int miBlocks = 2;
-
-	
-    private int[][] miSpace = null;
-    private RankSorter[] ranks = null;
-    private double[][] miProb = null;
-    private double maPerMIStep = 1;
-    private double bandwith[];
-	private Vector<Vector<Gene>> rankedValues;
-	private double variance[];
-
-    
-
+    private Mutual_Info mi;    
 	
 	public Double getMetric(CyniTable table1, CyniTable table2, int indexBase, List<Integer> indexToCompare) { 
 		double result = 0.0;
@@ -102,13 +93,25 @@ public class MutualInfoMetric extends AbstractCyniMetric {
 			size = (Integer) params.get("Size");
 		
 		if(params.containsKey("Type"))
+		{
 			type =  Enum.valueOf(Mutual_Info.ALGORITHM.class,params.get("Type").toString());
+			
+		}
 			//type = (Mutual_Info.ALGORITHM) params.get("Type");
 		
-		mi = new Mutual_Info(size,miSteps,kernelWidth,type);
 		
 	}
 	
+	@Override
+	public  CyniTable getCyniTable( CyTable table, String[] attributes, boolean transpose, boolean ignoreMissing, boolean selectedOnly)
+	{
+		return  new AracneCyniTable(table,attributes, false, false, selectedOnly,type);
+	}
+	
+	public void initMetric()
+	{
+		mi = new Mutual_Info(size,miSteps,kernelWidth,type);
+	}
 	
 
 	

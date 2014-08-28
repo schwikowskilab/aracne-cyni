@@ -27,12 +27,12 @@
   along with this library; if not, write to the Free Software Foundation,
   Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-package org.cytoscape.aracneAlgorithm.internal;
+package fr.systemsbiology.aracneAlgorithm.internal;
 
 
 import java.util.*;
 
-import org.cytoscape.cyni.*;
+import fr.systemsbiology.cyni.*;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
@@ -59,7 +59,7 @@ public class AracneAlgorithm extends AbstractCyniAlgorithm {
 	 * Creates a new EqualDiscretization object.
 	 */
 	public AracneAlgorithm() {
-		super("aracne.cyni","ARACNE Algorithm",true,CyniCategory.INDUCTION);
+		super("aracne","ARACNE Algorithm",true,CyniCategory.INDUCTION);
 	
 	}
 

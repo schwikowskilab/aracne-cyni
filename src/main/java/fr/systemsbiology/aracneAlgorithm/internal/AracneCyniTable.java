@@ -1,14 +1,11 @@
-package org.cytoscape.aracneAlgorithm.internal;
+package fr.systemsbiology.aracneAlgorithm.internal;
 
-import org.cytoscape.cyni.*;
+import fr.systemsbiology.cyni.*;
 import org.cytoscape.model.CyTable;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Vector;
-import java.util.Collections;
-import java.util.Hashtable;
-import org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric.*;
+import java.util.*;
+import fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric.*;
+import fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric.Mutual_Info.ALGORITHM;
 
 
 
@@ -19,9 +16,17 @@ public class AracneCyniTable extends CyniTable {
 	private double variance[];
 
 
-	public AracneCyniTable(  CyTable table, String[] attributes, boolean transpose, boolean ignoreMissing, boolean selectedOnly) {
+	public AracneCyniTable(  CyTable table, String[] attributes, boolean transpose, boolean ignoreMissing, boolean selectedOnly,ALGORITHM type) {
 		super(table,attributes,transpose,ignoreMissing,  selectedOnly);
 		rankedValues = new Vector<Vector<Gene>>(this.nRows());
+		if(!hasAnyMissingValue())
+		{
+			computeMarkerVariance();
+			computeBandwidth();
+			computeMarkerRanks();
+			if(type.equals(Mutual_Info.ALGORITHM.FIXED_BANDWIDTH) || type.equals(Mutual_Info.ALGORITHM.ADAPTIVE_PARTITIONING))
+	        	addNoise();
+		}
 	}
 	
 	public AracneCyniTable(CyniTable table)
@@ -71,6 +76,10 @@ public class AracneCyniTable extends CyniTable {
 		return bandwith[idx];
 	}
 	
+	public double getVariance(int idx)
+	{
+		return variance[idx];
+	}
 	
 	public void computeMarkerRanks() {
 		int n = this.nColumns();
@@ -101,6 +110,34 @@ public class AracneCyniTable extends CyniTable {
         for (int i = 0; i < this.nRows(); i++) {
              variance[i] = calVariance(i);
             
+        }
+    }
+    
+    public void setVariance(double variance,int idx) {
+        this.variance[idx] = variance;
+    }
+
+    public void setBandwidth(double bandwidth,int idx) {
+        this.bandwith[idx] = bandwidth;
+    }
+    
+    public void setRankedValues(Vector<Gene> r,int idx) {
+        rankedValues.set(idx, r);
+    }
+    
+    public void addNoise()
+    {
+    	Random rng = new Random(System.currentTimeMillis());
+      
+        for (int id = 0; id < nRows(); id++) {
+            
+            for (int mid = 0; mid < nColumns(); mid++) {
+            	if(hasValue(id,mid))
+            	{
+            		double noise = rng.nextDouble() * 1e-10;
+            		setValue(id,mid,(Double)(doubleValue(id,mid)+noise));
+            	}
+            }
         }
     }
     

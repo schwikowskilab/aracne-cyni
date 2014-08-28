@@ -1,4 +1,4 @@
-package org.cytoscape.aracneAlgorithm.internal.mutualInfoMetric;
+package fr.systemsbiology.aracneAlgorithm.internal.mutualInfoMetric;
 
 
 public  class Gene {

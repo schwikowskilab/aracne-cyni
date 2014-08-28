@@ -3,14 +3,14 @@
 	
 	<properties>
 		<bundle.symbolicName>ARACNE</bundle.symbolicName>
-		<bundle.namespace>org.cytoscape.aracneAlgorithm.internal</bundle.namespace>
-		<cytoscape.api.version>3.0.0</cytoscape.api.version>
-		<cyni.api.version>1.0-beta2</cyni.api.version>
+		<bundle.namespace>fr.systemsbiology.aracneAlgorithm.internal</bundle.namespace>
+		<cytoscape.api.version>3.1.0</cytoscape.api.version>
+		<cyni.api.version>1.0.0</cyni.api.version>
 		<maven-bundle-plugin.version>2.3.4</maven-bundle-plugin.version>
 		<osgi.api.version>4.2.0</osgi.api.version>
 	</properties>
 
-	<groupId>org.cytoscape.aracneAlgorithm</groupId>
+	<groupId>fr.systemsbiology.aracneAlgorithm</groupId>
 	<artifactId>aracneAlgorithm</artifactId>
 	<packaging>bundle</packaging>
 	<name>${bundle.symbolicName}</name>
@@ -29,7 +29,9 @@
 						<Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Export-Package>!${bundle.namespace}.*</Export-Package>
-						<Embed-Dependency>commons-math3;colt;inline=true</Embed-Dependency>
+						<Embed-Dependency>commons-discovery;commons-math3;commons-math;colt;inline=true</Embed-Dependency>
+						<Cytoscape-API-Compatibility>3.1</Cytoscape-API-Compatibility>
+						<Cytoscape-App-Dependencies>Cyni Toolbox;1.0.0.beta6</Cytoscape-App-Dependencies>
 					<!--	<Import-Package>!EDU.oswego.cs.dl.util.concurrent</Import-Package>-->
 						<Private-Package>${bundle.namespace}.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.CyActivator</Bundle-Activator>
@@ -96,6 +98,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.cytoscape</groupId>
+			<artifactId>model-api</artifactId>
+			<version>${cytoscape.api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.cytoscape</groupId>
 			<artifactId>work-api</artifactId>
 			<version>${cytoscape.api.version}</version>
 		</dependency>
@@ -115,7 +122,7 @@
 			<version>${osgi.api.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.cytoscape</groupId>
+			<groupId>fr.systemsbiology</groupId>
 			<artifactId>cyni-api</artifactId>
 			<version>${cyni.api.version}</version>
 		</dependency>
@@ -123,6 +130,16 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math</artifactId>
+			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-discovery</artifactId>
+			<version>0.5</version>
 		</dependency>
                 <dependency>
 			<groupId>cytoscape-temp</groupId>
@@ -153,6 +170,11 @@
 			<version>${cytoscape.api.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>cytoscape-temp</groupId>
+			<artifactId>parallelcolt</artifactId>
+			<version>0.9.4</version>
 		</dependency>
 	</dependencies>
 
